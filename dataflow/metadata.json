@@ -1,0 +1,36 @@
+{
+    "name": "Retail API loader flex template",
+    "description": "Load product catalog from SAP Hybris to BigQuery using GCP Retail API schema",
+    "parameters": [
+      {
+        "name": "auth-url",
+        "label": "auth RESR API url",
+        "helpText": "auth RESR API url"
+      },
+      {
+        "name": "products-url",
+        "label": "products RESR API url",
+        "helpText": "products RESR API url"
+      },
+      {
+        "name": "categories-url",
+        "label": "categories RESR API url",
+        "helpText": "categories RESR API url"
+      },
+      {
+        "name": "bq_dataset",
+        "label": "bq_dataset",
+        "helpText": "bq_dataset"
+      },
+      {
+        "name": "temp_gcs_bucket",
+        "label": "temp_gcs_bucket",
+        "helpText": "temp_gcs_bucket"
+      },
+      {
+        "name": "config_file_gsutil_uri",
+        "label": "config_file_gsutil_uri",
+        "helpText": "config_file_gsutil_uri"
+      }
+    ]
+  }
