@@ -71,7 +71,7 @@ with models.DAG(
         big_query_source = BigQuerySource(
             project_id=PROJECT_ID,
             dataset_id="retail_api",
-            table_id="catalog"
+            table_id="catalog_api"
         )
         input_config = ProductInputConfig(big_query_source=big_query_source)
         import_request = ImportProductsRequest(
