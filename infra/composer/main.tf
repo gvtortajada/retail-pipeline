@@ -25,7 +25,7 @@ resource "google_composer_environment" "composer" {
             core-dags_are_paused_at_creation = "True"
         }
         env_variables = {
-            PROJECT_ID      = var.project_id
+            GCP_PROJECT_ID  = var.project_id
             CONFIG_INI      = "gs://${var.project_id}-retail-api-row-catalog-data/config.INI"
             AUTH_URL        = var.api_auth_url
             PRODUCTS_URL    = var.api_products_url

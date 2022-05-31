@@ -10,7 +10,7 @@ from google.cloud.retail import (
     BigQuerySource
 )
 
-PROJECT_ID = os.environ.get("PROJECT_ID")
+PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
 CONFIG_INI = os.environ.get("CONFIG_INI")
 AUTH_URL = os.environ.get("AUTH_URL")
 PRODUCTS_URL = os.environ.get("PRODUCTS_URL")
