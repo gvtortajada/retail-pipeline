@@ -31,6 +31,16 @@
         "name": "config_file_gsutil_uri",
         "label": "config_file_gsutil_uri",
         "helpText": "config_file_gsutil_uri"
+      },
+      {
+        "name": "catalog_type",
+        "label": "catalog_type",
+        "helpText": "primary or secondary"
+      },
+      {
+        "name": "catalog_tag",
+        "label": "catalog_tag",
+        "helpText": "example: US or CA"
       }
     ]
   }

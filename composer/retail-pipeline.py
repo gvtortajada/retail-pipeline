@@ -15,8 +15,13 @@ CONFIG_INI = os.environ.get("CONFIG_INI")
 AUTH_URL = os.environ.get("AUTH_URL")
 PRODUCTS_URL = os.environ.get("PRODUCTS_URL")
 CATEGORIES_URL = os.environ.get("CATEGORIES_URL")
+SECONDARY_PRODUCTS_URL = os.environ.get("SECONDARY_PRODUCTS_URL")
+SECONDARY_CATEGORIES_URL = os.environ.get("SECONDARY_CATEGORIES_URL")
 RETAIL_BRANCH = os.environ.get("RETAIL_BRANCH")
 CRON_SCHEDULER = os.environ.get("CRON_SCHEDULER")
+PRIMARY_CATALOG_TAG = os.environ.get("PRIMARY_CATALOG_TAG")
+SECONDARY_CATALOG_TAG = os.environ.get("SECONDARY_CATALOG_TAG")
+
 
 with models.DAG(
     dag_id="retail_api_catalog_import",
@@ -29,9 +34,9 @@ with models.DAG(
     # 
     # Import Hybris products catalog into Bigquery using Dataflow
     #
-    job_name = 'retail-loader-'+datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
-    hybris_to_bigquery = DataflowStartFlexTemplateOperator(
-        task_id="Hybris_to_BigQuery",
+    job_name = 'retail-loader-primary'+datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
+    hybris_to_bigquery_primary = DataflowStartFlexTemplateOperator(
+        task_id="Hybris_primary_to_BigQuery",
         body={
             "launchParameter": {
                 "containerSpecGcsPath": f"gs://{PROJECT_ID}-retail-api-loader-dataflow-template/dataflow/templates/retail-api-loader.json",
@@ -42,7 +47,9 @@ with models.DAG(
                     "categories-url":CATEGORIES_URL,
                     "bq_dataset":f"{PROJECT_ID}:retail_api",
                     "temp_gcs_bucket":f"gs://{PROJECT_ID}-temp-import-retail-api",
-                    "config_file_gsutil_uri":f"gs://{PROJECT_ID}-retail-api-row-catalog-data/config.INI"
+                    "config_file_gsutil_uri":f"gs://{PROJECT_ID}-retail-api-row-catalog-data/config.INI",
+                    "catalog_type":"primary",
+                    "catalog_tag":PRIMARY_CATALOG_TAG
                 },
                 "environment": {
                     "network": "retail-api-vpc",
@@ -61,7 +68,39 @@ with models.DAG(
         wait_until_finished=True
     )
 
-
+    job_name = 'retail-loader-secondary'+datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
+    hybris_to_bigquery_secondary = DataflowStartFlexTemplateOperator(
+        task_id="Hybris_secondary_to_BigQuery",
+        body={
+            "launchParameter": {
+                "containerSpecGcsPath": f"gs://{PROJECT_ID}-retail-api-loader-dataflow-template/dataflow/templates/retail-api-loader.json",
+                "jobName": job_name,
+                "parameters": {
+                    "auth-url": AUTH_URL,
+                    "products-url":SECONDARY_PRODUCTS_URL,
+                    "categories-url":SECONDARY_CATEGORIES_URL,
+                    "bq_dataset":f"{PROJECT_ID}:retail_api",
+                    "temp_gcs_bucket":f"gs://{PROJECT_ID}-temp-import-retail-api",
+                    "config_file_gsutil_uri":f"gs://{PROJECT_ID}-retail-api-row-catalog-data/config.INI",
+                    "catalog_type":"secondary",
+                    "catalog_tag":SECONDARY_CATALOG_TAG
+                },
+                "environment": {
+                    "network": "retail-api-vpc",
+                    "subnetwork": "regions/northamerica-northeast1/subnetworks/retail-api-subnet",
+                    "machineType": "n1-standard-1",
+                    "numWorkers": "1",
+                    "maxWorkers": "1",
+                    "ipConfiguration": "WORKER_IP_PRIVATE",
+                    "serviceAccountEmail": f"retail-api-sa@{PROJECT_ID}.iam.gserviceaccount.com"
+                },
+            }
+        },
+        do_xcom_push=True,
+        location="northamerica-northeast1",
+        project_id=PROJECT_ID,
+        wait_until_finished=True
+    )
     # 
     # Import Hybris products catalog from Bigquery to Retail API
     # catalog branch
@@ -85,4 +124,4 @@ with models.DAG(
         task_id='Load_catalog_from_BigQuery',
         python_callable=import_catalog,
     )
-    hybris_to_bigquery >> load_catalog_from_bigquery
+    hybris_to_bigquery_primary >> hybris_to_bigquery_secondary >> load_catalog_from_bigquery

@@ -58,5 +58,5 @@ variable "composer_cron_scheduler" {
 }
 
 variable "composer_image_version" {
-  default = "composer-2.0.6-airflow-2.2.3"
+  default = "composer-2.0.22-airflow-2.2.5"
 }

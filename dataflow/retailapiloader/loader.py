@@ -2,15 +2,12 @@ import argparse
 import logging
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-from apache_beam.dataframe.io import read_csv
-from apache_beam.dataframe import convert
 from apache_beam.pvalue import AsSingleton
 from google.cloud import bigquery
 from retailapiloader.bq_schema import retail_schema
-from retailapiloader.transformers import CategoriesFn, GetCategories, GetProducts, MapToProduct, MergeProducts
+from retailapiloader.transformers import GetCategories, GetProducts, MergeProducts
 from retailapiloader.utils import Utils
 from google.cloud import secretmanager
-import requests
 
 
 def run(argv=None):
@@ -45,6 +42,16 @@ def run(argv=None):
         dest='config_file_gsutil_uri',
         default="",
         help='gsutil uri of the config file')
+    parser.add_argument(
+        '--catalog_type',
+        dest='catalog_type',
+        default="",
+        help='primary or secondary')
+    parser.add_argument(
+        '--catalog_tag',
+        dest='catalog_tag',
+        default="",
+        help='example: US or CA')
     known_args, pipeline_args = parser.parse_known_args(argv)
 
     pipeline_options = PipelineOptions(pipeline_args)
@@ -99,7 +106,7 @@ def run(argv=None):
         merged_products = (
             ({'current': previous_products, 'new': current_products})
             | 'Merge primary products' >> beam.CoGroupByKey()
-            | 'Reduce primary products' >> beam.ParDo(MergeProducts())
+            | 'Reduce primary products' >> beam.ParDo(MergeProducts(utils))
         )
 
         # Write products to BigQuery``

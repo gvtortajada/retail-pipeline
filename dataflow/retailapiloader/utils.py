@@ -28,6 +28,11 @@ class Utils:
         self.materials = config.get('OPTIONS', 'materials')
         if self.materials:
             self.materials = self.materials.split(',')
+        if not known_args.catalog_type == 'primary' and not known_args.catalog_type == 'secondary':
+            error = f'Catalog type unknown! Must be either primary or secondary, found: {known_args.catalog_type}'
+            raise ValueError(error)
+        self.catalog_type = known_args.catalog_type
+        self.catalog_tag = known_args.catalog_tag
 
 
     def api_authenticate(self, known_args, api_client, api_secret):
@@ -74,7 +79,7 @@ class Utils:
         product.tags = self.build_tags(element)
         product.priceInfo = self.build_price_info(element)
         product.availability = self.build_availability(element)
-        product.availableQuantity = int(element['inventory'])
+        product.availableQuantity = 0 if self.catalog_type == 'secondary' else int(element['inventory'])
         product.fulfillmentInfo = self.build_fulfillment_info(element)
         product.uri = element['productGlobalUrl']
         product.images = [Image(element['mainSqGy800X800'], 800, 800)]
@@ -82,6 +87,26 @@ class Utils:
         product.sizes = self.build_sizes(element)
         product.materials = self.build_materials(element)
         return json.loads(json.dumps(product, default=lambda o: o.__dict__)) 
+
+    def merge(self, element):
+        # For primary catalog
+        if self.catalog_type == 'primary':
+            # if in BQ but not in the API call response
+            if not element[1]['new']:
+                current = element[1]['current'][0]
+                current['availability'] = 'OUT_OF_STOCK'
+                current['availableQuantity'] = 0
+                return current
+            else:
+                return element[1]['new'][0]
+        else:
+            # For secondary catalog
+            # if not in BQ we add it otherwise we don't 
+            if not element[1]['current']:
+                return element[1]['new'][0]
+            else:
+                return element[1]['current'][0]
+
 
     def build_attributes(self, line: dict) -> List[Attribute]:
         attributes = []
@@ -101,7 +126,9 @@ class Utils:
         return attributes
 
     def build_tags(self, line: dict) -> List[str]:
-        return list(filter(None, [line[tag] for tag in self.tags if tag in line]))
+        tags = list(filter(None, [line[tag] for tag in self.tags if tag in line]))
+        tags.append(self.catalog_tag)
+        return tags
 
     def build_price_info(self, line: dict) -> PriceInfo:
         return PriceInfo('USD', line['salePrice'], line['listPrice'], None, None, None)
@@ -153,11 +180,13 @@ class Utils:
                     category_path_list.append(accumulator)
 
             return category_path_list
-        except:
-            print(element)
+        except Exception as ex:
+            product_id = element['productCode']
+            print(f'No categories found for productId: {product_id} fallback to Online Exclusive')
+            return 'Online Exclusive'
 
     def build_availability(self, line: dict) -> str:
-        return 'IN_STOCK' if int(line['inventory']) > 0 else 'OUT_OF_STOCK'
+        return 'IN_STOCK' if int(line['inventory']) > 0 and self.catalog_type == 'primary' else 'OUT_OF_STOCK'
 
     def build_available_time(self, line: dict) -> str:
         return line['date_published']

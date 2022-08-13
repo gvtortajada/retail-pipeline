@@ -41,6 +41,7 @@ REQUIRED_PACKAGES = [
     'wheel',
     'apache-beam[gcp, dataframe]',
     'pandas',
+    'google-cloud-core',
     'google-cloud-bigquery',
     'google-cloud-storage',
     'google-cloud-secret-manager'

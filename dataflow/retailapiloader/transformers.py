@@ -23,23 +23,12 @@ class CategoriesFn(beam.CombineFn):
         return accumulator
 
 
-class MapToProduct(beam.DoFn):
-
+class MergeProducts(beam.DoFn):
     def __init__(self, utils:Utils):
         self.utils = utils
 
-    def process(self, element, categories):
-        yield self.utils.fromCSV(element, categories)
-
-class MergeProducts(beam.DoFn):
     def process(self, element):
-        if not element[1]['new']:
-            current = element[1]['current'][0]
-            current['availability'] = 'OUT_OF_STOCK'
-            current['availableQuantity'] = 0
-            yield current
-        else:
-            yield element[1]['new'][0]
+        yield self.utils.merge(element)
 
 class GetCategories(beam.DoFn):
     def __init__(self, url:str, api_token:str, utils:Utils):

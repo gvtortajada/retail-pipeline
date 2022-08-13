@@ -3,7 +3,7 @@ variable "api_user" {}
 variable "api_secret" {}
 
 resource "google_secret_manager_secret" "api-user" {
-  secret_id = "api-user"
+  secret_id = "api-client"
   project   = var.project_id
 
   labels = {
