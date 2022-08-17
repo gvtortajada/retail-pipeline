@@ -123,6 +123,12 @@ class Utils:
                         searchable = False, 
                         indexable = False)
                 attributes.append(Attribute(key, value))
+
+        catalog_tag_value = AttributeValue(text = [self.catalog_tag], 
+                        numbers = [],
+                        searchable = False, 
+                        indexable = False)
+        attributes.append(Attribute('src_catalog_geo', catalog_tag_value))
         return attributes
 
     def build_tags(self, line: dict) -> List[str]:
